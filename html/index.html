@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Poppins:wght@300;400;600&family=Fugaz+One&display=swap" rel="stylesheet">
+    <title>AX_hud</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Logo del servidor -->
+    <div id="server-logo">
+        <img id="logo-img" src="" alt="Server Logo">
+    </div>
+    
+    <!-- Contenedor Principal -->
+    <div id="stats-container">
+        
+        <!-- MICRÓFONO CON TEXTO (sin recuadro) -->
+        <div class="stat-voice" id="voice-stat">
+            <span class="voice-text" id="voice-text">NORMAL</span>
+        </div>
+
+        <!-- SEPARADOR -->
+        <div class="separator"></div>
+
+        <!-- STAMINA - NUEVO -->
+        <div class="stat-item" id="stamina-stat">
+            <div class="icon-container">
+                <img src="icons/stamine_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/stamine_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPERATURA -->
+        <div class="stat-item" id="temperature-stat">
+            <div class="icon-container">
+                <img src="icons/temperature_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/temperature_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+
+        <!-- SEPARADOR -->
+        <div class="separator"></div>
+
+        <!-- SED -->
+        <div class="stat-item" id="thirst-stat">
+            <div class="icon-container">
+                <img src="icons/thirst_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/thirst_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+
+        <!-- HAMBRE -->
+        <div class="stat-item" id="hunger-stat">
+            <div class="icon-container">
+                <img src="icons/hunger_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/hunger_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+
+        <!-- SEPARADOR -->
+        <div class="separator"></div>
+
+        <!-- ARMADURA (solo visible si tiene) -->
+        <div class="stat-item hidden" id="armor-stat">
+            <div class="icon-container">
+                <img src="icons/armor_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/armor_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+
+        <!-- SALUD -->
+        <div class="stat-item" id="health-stat">
+            <div class="icon-container">
+                <img src="icons/health_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/health_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+        
+    </div>
+    
+    <!-- HUD DE VEHÍCULO -->
+    <div id="vehicle-hud" class="hidden">
+        <!-- Velocímetro e iconos en la misma fila -->
+        <div class="speed-and-icons">
+            <div class="speedometer">
+                <span id="speed-value">000</span>
+                <span class="speed-unit">km/h</span>
+            </div>
+            
+            <div class="vehicle-icons">
+                <div class="vehicle-icon" id="belt-icon">
+                    <i class="fas fa-user-shield"></i>
+                </div>
+                <div class="vehicle-icon" id="lock-icon">
+                    <i class="fas fa-lock"></i>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Barras de estado -->
+        <div class="vehicle-bars">
+            <!-- Combustible -->
+            <div class="vehicle-bar-container">
+                <i class="fas fa-gas-pump bar-icon"></i>
+                <div class="vehicle-bar">
+                    <div class="vehicle-bar-fill fuel-bar" id="fuel-bar"></div>
+                </div>
+            </div>
+            
+            <!-- Motor -->
+            <div class="vehicle-bar-container">
+                <i class="fas fa-wrench bar-icon"></i>
+                <div class="vehicle-bar engine-bar-container">
+                    <div class="vehicle-bar-fill engine-bar" id="engine-bar"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Marco del minimapa -->
+    <div id="minimap-frame" class="hidden"></div>
+    
+<script src="script.js"></script>
+</body>
+</html>
