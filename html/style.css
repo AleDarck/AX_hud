@@ -120,6 +120,68 @@ body {
     filter: drop-shadow(0 0 6px rgba(244, 67, 54, 0.6));
 }
 
+/* ========== ESTADOS ESPECIALES PARA PEE Y DEFECATE ========== */
+
+/* Estado CAUTION (50-84%) - Amarillo para pee, café claro para defecate */
+#pee-stat.caution .icon-fill-img {
+    filter: brightness(0) saturate(100%) 
+            invert(88%) sepia(80%) saturate(1000%) 
+            hue-rotate(1deg) brightness(105%) contrast(101%);
+}
+
+#defecate-stat.caution .icon-fill-img {
+    filter: brightness(0) saturate(100%) 
+            invert(60%) sepia(30%) saturate(500%) 
+            hue-rotate(5deg) brightness(95%) contrast(90%);
+}
+
+/* Estado WARNING (85-89%) - Rojo sin parpadeo */
+#pee-stat.warning .icon-fill-img,
+#defecate-stat.warning .icon-fill-img {
+    filter: brightness(0) saturate(100%) 
+            invert(27%) sepia(98%) saturate(7495%) 
+            hue-rotate(8deg) brightness(98%) contrast(118%)
+            drop-shadow(0 0 8px rgba(244, 67, 54, 0.8));
+}
+
+#pee-stat.warning .icon-outline,
+#defecate-stat.warning .icon-outline {
+    filter: drop-shadow(0 0 6px rgba(244, 67, 54, 0.6));
+}
+
+/* Estado CRITICAL (90-100%) - Rojo con parpadeo */
+#pee-stat.critical .icon-fill-img,
+#defecate-stat.critical .icon-fill-img {
+    filter: brightness(0) saturate(100%) 
+            invert(27%) sepia(98%) saturate(7495%) 
+            hue-rotate(8deg) brightness(98%) contrast(118%)
+            drop-shadow(0 0 8px rgba(244, 67, 54, 0.8));
+    animation: pulseCritical 0.8s infinite;
+}
+
+#pee-stat.critical .icon-outline,
+#defecate-stat.critical .icon-outline {
+    animation: pulseOutlineCritical 0.8s infinite;
+    filter: drop-shadow(0 0 6px rgba(244, 67, 54, 0.6));
+}
+
+/* Animación de entrada suave cuando aparecen por primera vez */
+#pee-stat:not(.hidden),
+#defecate-stat:not(.hidden) {
+    animation: fadeInStat 0.5s ease;
+}
+
+@keyframes fadeInStat {
+    from {
+        opacity: 0;
+        transform: scale(0.8);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
 @keyframes pulseOutlineCritical {
     0%, 100% {
         opacity: 0.9;

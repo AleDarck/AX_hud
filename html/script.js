@@ -7,7 +7,9 @@ let colors = {
     thirst: {r: 3, g: 169, b: 244},
     hunger: {r: 255, g: 193, b: 7},
     armor: {r: 33, g: 150, b: 243},
-    health: {r: 244, g: 67, b: 54}
+    health: {r: 244, g: 67, b: 54},
+    pee: {r: 255, g: 235, b: 59},        // NUEVO
+    defecate: {r: 121, g: 85, b: 72}    // NUEVO
 };
 
 // Elementos DOM
@@ -21,6 +23,8 @@ const stressStat = document.getElementById('stress-stat');
 const oxygenStat = document.getElementById('oxygen-stat');
 const staminaBarContainer = document.getElementById('stamina-bar-container');
 const staminaBarFill = document.getElementById('stamina-bar-fill');
+const peeStat = document.getElementById('pee-stat');
+const defecateStat = document.getElementById('defecate-stat');
 // Vehicle elements
 const vehicleHud = document.getElementById('vehicle-hud');
 const speedValue = document.getElementById('speed-value');
@@ -94,15 +98,39 @@ function updateStatFill(element, percentage, colorKey) {
     // Animar gradualmente
     animateValue(fillContainer, currentHeight, percentage);
     
+    // Lógica especial para pee y defecate (INVERSO - crítico cuando es ALTO)
+    if (colorKey === 'pee' || colorKey === 'defecate') {
+        // Ocultar si está por debajo del 25%
+        if (percentage < 25) {
+            element.classList.add('hidden');
+            element.classList.remove('critical', 'warning', 'caution');
+        } else {
+            element.classList.remove('hidden');
+            
+            // Remover todas las clases primero
+            element.classList.remove('critical', 'warning', 'caution');
+            
+            // Aplicar clases según el nivel (INVERSO)
+            if (percentage >= 90) {
+                element.classList.add('critical'); // Parpadeo rojo >= 90%
+            } else if (percentage >= 85) {
+                element.classList.add('warning'); // Rojo sin parpadeo >= 85%
+            } else if (percentage >= 50) {
+                element.classList.add('caution'); // Amarillo/café >= 50%
+            }
+            // Entre 25-49% mantiene color original
+        }
+    }
     // Lógica especial para stress (crítico cuando es ALTO, no bajo)
-    if (colorKey === 'stress') {
+    else if (colorKey === 'stress') {
         if (percentage >= 75) {
             element.classList.add('critical');
         } else {
             element.classList.remove('critical');
         }
-    } else {
-        // Para el resto (health, hunger, thirst) crítico cuando es BAJO
+    }
+    // Para el resto (health, hunger, thirst, oxygen) crítico cuando es BAJO
+    else {
         if (percentage <= 25) {
             element.classList.add('critical');
         } else {
@@ -362,6 +390,12 @@ function updateStats(data) {
     
     // ESTRÉS
     updateStatFill(stressStat, data.stress, 'stress');
+
+    // PEE
+    updateStatFill(peeStat, data.pee, 'pee');
+
+    // DEFECATE
+    updateStatFill(defecateStat, data.defecate, 'defecate');
         
     // OXÍGENO (solo mostrar si está bajo el agua)
     if (data.isUnderwater) {

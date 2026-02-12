@@ -18,6 +18,8 @@ local statusData = {
     thirst = 100,
     stress = 0,
     oxygen = 100,
+    pee = 0,
+    defecate = 0, 
     temperature = 36.5,
     isDead = false
 }
@@ -120,6 +122,20 @@ Citizen.CreateThread(function()
                     statusData.stress = math.floor(status.getPercent())
                 end
             end)
+
+            -- PEE (ORINA)
+            TriggerEvent('esx_status:getStatus', 'pee', function(status)
+                if status then
+                    statusData.pee = math.floor(status.getPercent())
+                end
+            end)
+
+            -- DEFECATE (DEFECAR)
+            TriggerEvent('esx_status:getStatus', 'defecate', function(status)
+                if status then
+                    statusData.defecate = math.floor(status.getPercent())
+                end
+            end)
             
             -- OXÍGENO
             if IsPedSwimmingUnderWater(playerPed) then
@@ -146,6 +162,8 @@ Citizen.CreateThread(function()
                     hunger = statusData.hunger,
                     stress = statusData.stress,
                     oxygen = statusData.oxygen,
+                    pee = statusData.pee,              -- NUEVO
+                    defecate = statusData.defecate,    -- NUEVO
                     temperature = statusData.temperature,
                     showArmor = Config.ShowArmor and statusData.armor > 0,
                     isUnderwater = IsPedSwimmingUnderWater(playerPed)
@@ -828,6 +846,14 @@ exports('GetOxygen', function()
     return statusData.oxygen
 end)
 
+exports('GetPee', function()
+    return statusData.pee
+end)
+
+exports('GetDefecate', function()
+    return statusData.defecate
+end)
+
 exports('ToggleHUD', function(state)
     hudEnabled = state
     SendNUIMessage({
@@ -839,3 +865,4 @@ end)
 exports('IsHUDEnabled', function()
     return hudEnabled
 end)
+

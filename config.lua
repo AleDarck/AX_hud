@@ -13,13 +13,15 @@ Config.ShowLocation = true
 
 -- Elementos a mostrar
 Config.ShowVoice = true        -- Micrófono
-Config.ShowTemperature = true  -- Temperatura
+Config.ShowTemperature = false  -- Temperatura
 Config.ShowThirst = true       -- Sed
 Config.ShowHunger = true       -- Hambre
 Config.ShowArmor = true        -- Armadura (solo si tiene)
 Config.ShowHealth = true       -- Salud
 Config.ShowStress = true       -- Estrés
 Config.ShowOxygen = true       -- Oxígeno bajo el agua
+Config.ShowPee = true          -- Necesidad de orinar
+Config.ShowDefecate = true     -- Necesidad de defecar
 
 -- Colores - AGREGA stamina
 Config.Colors = {
@@ -31,11 +33,14 @@ Config.Colors = {
     thirst = {3, 169, 244},
     hunger = {255, 193, 7},
     armor = {33, 150, 243},
-    health = {244, 67, 54}
+    health = {244, 67, 54},
+    pee = {255, 235, 59},          -- Amarillo
+    defecate = {121, 85, 72},      -- Marrón
+    stamina = {76, 175, 80}
 }
 
 -- Temperatura (sistema opcional)
-Config.UseTemperature = true
+Config.UseTemperature = false
 Config.TemperatureDefault = 36.5 -- Temperatura corporal normal
 
 -- Configuración de vehículo
