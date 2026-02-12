@@ -1,7 +1,8 @@
 // Colores configurables
 let colors = {
     voice: {r: 255, g: 255, b: 255},
-    stamina: {r: 76, g: 175, b: 80},  // NUEVO
+    stress: {r: 156, g: 39, b: 176},
+    oxygen: {r: 3, g: 169, b: 244},
     temperature: {r: 255, g: 152, b: 0},
     thirst: {r: 3, g: 169, b: 244},
     hunger: {r: 255, g: 193, b: 7},
@@ -16,7 +17,10 @@ const thirstStat = document.getElementById('thirst-stat');
 const hungerStat = document.getElementById('hunger-stat');
 const armorStat = document.getElementById('armor-stat');
 const healthStat = document.getElementById('health-stat');
-const staminaStat = document.getElementById('stamina-stat');
+const stressStat = document.getElementById('stress-stat');
+const oxygenStat = document.getElementById('oxygen-stat');
+const staminaBarContainer = document.getElementById('stamina-bar-container');
+const staminaBarFill = document.getElementById('stamina-bar-fill');
 // Vehicle elements
 const vehicleHud = document.getElementById('vehicle-hud');
 const speedValue = document.getElementById('speed-value');
@@ -24,6 +28,17 @@ const fuelBar = document.getElementById('fuel-bar');
 const engineBar = document.getElementById('engine-bar');
 const beltIcon = document.getElementById('belt-icon');
 const lockIcon = document.getElementById('lock-icon');
+// Location elements
+const locationDisplay = document.getElementById('location-display');
+const locationZone = document.getElementById('location-zone');
+const locationStreet = document.getElementById('location-street');
+// Weapon elements
+const weaponHud = document.getElementById('weapon-hud');
+const weaponIcon = document.getElementById('weapon-icon');
+const weaponName = document.getElementById('weapon-name');
+const weaponAmmoCurrent = document.getElementById('weapon-ammo-current');
+const weaponAmmoTotal = document.getElementById('weapon-ammo-total');
+const weaponAmmoBar = document.getElementById('weapon-ammo-bar');
 
 // Función para convertir RGB a Hue
 function rgbToHue(r, g, b) {
@@ -79,11 +94,20 @@ function updateStatFill(element, percentage, colorKey) {
     // Animar gradualmente
     animateValue(fillContainer, currentHeight, percentage);
     
-    // Agregar clase crítica si es menor a 25%
-    if (percentage <= 25) {
-        element.classList.add('critical');
+    // Lógica especial para stress (crítico cuando es ALTO, no bajo)
+    if (colorKey === 'stress') {
+        if (percentage >= 75) {
+            element.classList.add('critical');
+        } else {
+            element.classList.remove('critical');
+        }
     } else {
-        element.classList.remove('critical');
+        // Para el resto (health, hunger, thirst) crítico cuando es BAJO
+        if (percentage <= 25) {
+            element.classList.add('critical');
+        } else {
+            element.classList.remove('critical');
+        }
     }
 }
 
@@ -187,12 +211,13 @@ function updateVehicle(data) {
     
     // MOTOR
     if (engineBar) {
-        // Asegurar que 0% sea realmente 0
-        const engineWidth = Math.max(0, Math.min(100, data.engine));
+        // Redondear a entero y asegurar rango
+        const engineWidth = Math.round(Math.max(0, Math.min(100, data.engine)));
         engineBar.style.width = engineWidth + '%';
         
-        // Si está en 0, ocultar completamente
-        if (engineWidth === 0) {
+        // Si está en 0 o muy cerca, forzar a 0
+        if (engineWidth <= 1) {
+            engineBar.style.width = '0%';
             engineBar.style.opacity = '0';
         } else {
             engineBar.style.opacity = '1';
@@ -200,12 +225,11 @@ function updateVehicle(data) {
         
         // Cambiar color según estado
         engineBar.classList.remove('damaged', 'critical');
-        if (data.engine <= 30) {
-            engineBar.classList.add('critical'); // Rojo <= 30%
-        } else if (data.engine <= 40) {
-            engineBar.classList.add('damaged'); // Amarillo <= 40%
+        if (engineWidth <= 30) {
+            engineBar.classList.add('critical');
+        } else if (engineWidth <= 40) {
+            engineBar.classList.add('damaged');
         }
-        // Blanco si > 40%
     }
     
     // CINTURÓN
@@ -273,6 +297,22 @@ window.addEventListener('message', (event) => {
                 };
             }
             break;
+
+        case 'updateStamina':
+            updateStaminaBar(data.stamina, data.inVehicle);
+            break;
+
+        case 'updateLocation':
+            updateLocation(data.zone, data.street, data.inVehicle);
+            break;
+
+        case 'updateWeaponHUD':
+            updateWeaponHUD(data.data);
+            break;
+            
+        case 'hideWeaponHUD':
+            hideWeaponHUD();
+            break;
     }
 });
 
@@ -320,11 +360,147 @@ function updateStats(data) {
     // HAMBRE
     updateStatFill(hungerStat, data.hunger, 'hunger');
     
-    // STAMINA - NUEVO
-    updateStatFill(staminaStat, data.stamina, 'stamina');
+    // ESTRÉS
+    updateStatFill(stressStat, data.stress, 'stress');
+        
+    // OXÍGENO (solo mostrar si está bajo el agua)
+    if (data.isUnderwater) {
+        oxygenStat.classList.remove('hidden');
+        updateStatFill(oxygenStat, data.oxygen, 'oxygen');
+    } else {
+        oxygenStat.classList.add('hidden');
+    }
+
+    // STAMINA (barra horizontal)
+    if (data.stamina !== undefined) {
+        staminaBarFill.style.width = data.stamina + '%';
+        
+        // Añadir animación si está baja
+        if (data.stamina <= 25) {
+            staminaBarFill.setAttribute('data-low', 'true');
+        } else {
+            staminaBarFill.removeAttribute('data-low');
+        }
+    }
+
+    // Ocultar stamina si está en vehículo
+    if (data.inVehicle !== undefined) {
+        if (data.inVehicle) {
+            staminaBarContainer.classList.add('hidden');
+        } else {
+            staminaBarContainer.classList.remove('hidden');
+        }
+    }
     
     // TEMPERATURA
     updateStatFill(temperatureStat, (data.temperature / 40) * 100, 'temperature');
+}
+
+function updateStaminaBar(stamina, inVehicle) {
+    if (!staminaBarFill || !staminaBarContainer) return;
+    
+    staminaBarFill.style.width = stamina + '%';
+    
+    // Añadir animación si está baja
+    if (stamina <= 25) {
+        staminaBarFill.setAttribute('data-low', 'true');
+    } else {
+        staminaBarFill.removeAttribute('data-low');
+    }
+    
+    // Ocultar si está en vehículo
+    if (inVehicle) {
+        staminaBarContainer.classList.add('hidden');
+    } else {
+        staminaBarContainer.classList.remove('hidden');
+    }
+}
+
+function updateLocation(zone, street, inVehicle) {
+    if (!locationDisplay || !locationZone || !locationStreet) return;
+    
+    // Actualizar textos
+    if (zone) locationZone.textContent = zone;
+    if (street) locationStreet.textContent = street;
+    
+    // Ocultar si está en vehículo
+    if (inVehicle) {
+        locationDisplay.classList.add('hidden');
+    } else {
+        locationDisplay.classList.remove('hidden');
+    }
+}
+
+function updateWeaponHUD(data) {
+    if (!weaponHud) return;
+    
+    // Mostrar HUD
+    weaponHud.classList.remove('hidden');
+    
+    // Actualizar icono del arma
+    if (weaponIcon && data.weaponItem) {
+        // Intentar primero con minúsculas
+        let imagePath = `nui://ox_inventory/web/images/${data.weaponItem}.png`;
+        weaponIcon.src = imagePath;
+        
+        // Si falla, intentar con mayúsculas
+        weaponIcon.onerror = function() {
+            const upperItem = data.weaponItem.toUpperCase();
+            weaponIcon.src = `nui://ox_inventory/web/images/${upperItem}.png`;
+            
+            // Si también falla, usar imagen por defecto
+            weaponIcon.onerror = function() {
+                weaponIcon.src = 'icons/weapon_default.png';
+            };
+        };
+    }
+    
+    // Actualizar nombre
+    if (weaponName) {
+        weaponName.textContent = data.weaponName || 'WEAPON';
+    }
+    
+    // Actualizar munición
+    if (!data.isMelee) {
+        if (weaponAmmoCurrent) {
+            weaponAmmoCurrent.textContent = data.ammoInClip || 0;
+            
+            // Añadir clase "low" si la munición es baja
+            if (data.maxClipAmmo > 0 && data.ammoInClip <= (data.maxClipAmmo * 0.25)) {
+                weaponAmmoCurrent.classList.add('low');
+            } else {
+                weaponAmmoCurrent.classList.remove('low');
+            }
+        }
+        
+        if (weaponAmmoTotal) {
+            weaponAmmoTotal.textContent = data.totalAmmo || 0;
+        }
+        
+        // Actualizar barra de munición
+        if (weaponAmmoBar && data.maxClipAmmo > 0) {
+            const percentage = (data.ammoInClip / data.maxClipAmmo) * 100;
+            weaponAmmoBar.style.width = percentage + '%';
+            
+            // Añadir clase "low" si está baja
+            if (percentage <= 25) {
+                weaponAmmoBar.classList.add('low');
+            } else {
+                weaponAmmoBar.classList.remove('low');
+            }
+        }
+    } else {
+        // Si es cuerpo a cuerpo, ocultar munición
+        if (weaponAmmoCurrent) weaponAmmoCurrent.textContent = '-';
+        if (weaponAmmoTotal) weaponAmmoTotal.textContent = '-';
+        if (weaponAmmoBar) weaponAmmoBar.style.width = '0%';
+    }
+}
+
+function hideWeaponHUD() {
+    if (weaponHud) {
+        weaponHud.classList.add('hidden');
+    }
 }
 
 // Inicialización

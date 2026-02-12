@@ -25,12 +25,22 @@
         <!-- SEPARADOR -->
         <div class="separator"></div>
 
-        <!-- STAMINA - NUEVO -->
-        <div class="stat-item" id="stamina-stat">
+        <!-- OXÍGENO (solo visible bajo el agua) -->
+        <div class="stat-item hidden" id="oxygen-stat">
             <div class="icon-container">
-                <img src="icons/stamine_outline.png" class="icon-outline">
+                <img src="icons/oxygen_outline.png" class="icon-outline">
                 <div class="icon-fill">
-                    <img src="icons/stamine_fill.png" class="icon-fill-img">
+                    <img src="icons/oxygen_fill.png" class="icon-fill-img">
+                </div>
+            </div>
+        </div>
+
+        <!-- ESTRÉS -->
+        <div class="stat-item" id="stress-stat">
+            <div class="icon-container">
+                <img src="icons/stress_outline.png" class="icon-outline">
+                <div class="icon-fill">
+                    <img src="icons/stress_fill.png" class="icon-fill-img">
                 </div>
             </div>
         </div>
@@ -91,6 +101,43 @@
             </div>
         </div>
         
+    </div>
+
+    <!-- STAMINA HORIZONTAL ABAJO IZQUIERDA -->
+    <div id="stamina-bar-container">
+        <i class="fas fa-running stamina-icon"></i>
+        <div class="stamina-bar-bg">
+            <div class="stamina-bar-fill" id="stamina-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- LOCATION DISPLAY -->
+    <div id="location-display">
+        <i class="fas fa-map-marker-alt location-icon"></i>
+        <div class="location-info">
+            <span class="location-zone" id="location-zone">Loading...</span>
+            <span class="location-street" id="location-street">Loading...</span>
+        </div>
+    </div>
+
+    <!-- WEAPON HUD -->
+    <div id="weapon-hud" class="hidden">
+        <div class="weapon-icon-container">
+            <img id="weapon-icon" src="" alt="Weapon" onerror="this.src='icons/weapon_default.png'">
+        </div>
+        <div class="weapon-info">
+            <div class="weapon-name-row">
+                <span class="weapon-name" id="weapon-name">PISTOL</span>
+            </div>
+            <div class="weapon-ammo-row">
+                <span class="weapon-ammo-current" id="weapon-ammo-current">15</span>
+                <span class="weapon-ammo-separator">/</span>
+                <span class="weapon-ammo-total" id="weapon-ammo-total">45</span>
+            </div>
+            <div class="weapon-ammo-bar">
+                <div class="weapon-ammo-bar-fill" id="weapon-ammo-bar"></div>
+            </div>
+        </div>
     </div>
     
     <!-- HUD DE VEHÍCULO -->
