@@ -252,27 +252,38 @@ Citizen.CreateThread(function()
                     })
                 end
             else
-                -- Obtener información del arma
-                local ammoInClip = GetAmmoInClip(playerPed, weaponHash)
-                local _, maxClipAmmo = GetMaxAmmoInClip(playerPed, weaponHash)
+                -- Obtener item name del arma
+                local weaponItem = GetWeaponItemName(weaponHash)
                 
-                -- Obtener munición total de forma segura
-                local _, totalAmmoRaw = GetAmmoInPedWeapon(playerPed, weaponHash)
-                local totalAmmo = 0
+                -- Obtener munición del cargador desde ox_inventory
+                local currentWeapon = exports.ox_inventory:getCurrentWeapon()
+                local ammoInClip = 0
                 
-                if totalAmmoRaw and type(totalAmmoRaw) == "number" then
-                    totalAmmo = totalAmmoRaw - ammoInClip
-                    if totalAmmo < 0 then totalAmmo = 0 end
+                if currentWeapon and currentWeapon.metadata and currentWeapon.metadata.ammo then
+                    ammoInClip = currentWeapon.metadata.ammo
+                else
+                    -- Fallback: usar GetAmmoInClip
+                    ammoInClip = GetAmmoInClip(playerPed, weaponHash)
+                end
+                
+                -- Obtener tamaño del cargador
+                local maxClipAmmo = GetWeaponClipSize(weaponHash)
+                
+                -- Obtener munición del inventario usando ox_inventory
+                local ammoItem = GetAmmoItemName(weaponHash)
+                local ammoInInventory = 0
+                
+                if ammoItem then
+                    local ammoCount = exports.ox_inventory:Search('count', ammoItem)
+                    ammoInInventory = ammoCount or 0
                 end
                 
                 -- Obtener nombre del arma
                 local weaponName = GetWeaponLabel(weaponHash)
                 
-                -- Obtener item name para la imagen
-                local weaponItem = GetWeaponItemName(weaponHash)
-                
-                -- Verificar si es arma de cuerpo a cuerpo (maxClipAmmo será 0 o nil)
-                local isMelee = (not maxClipAmmo or maxClipAmmo == 0)
+                -- Verificar si es arma de cuerpo a cuerpo
+                local weaponType = GetWeapontypeGroup(weaponHash)
+                local isMelee = (weaponType == `GROUP_MELEE` or weaponType == `GROUP_THROWN` or maxClipAmmo == 0)
                 
                 if Config.WeaponHUD.hideWithMelee and isMelee then
                     if isArmed then
@@ -289,9 +300,9 @@ Citizen.CreateThread(function()
                         data = {
                             weaponName = weaponName,
                             weaponItem = weaponItem,
-                            ammoInClip = ammoInClip or 0,
-                            maxClipAmmo = maxClipAmmo or 0,
-                            totalAmmo = totalAmmo,
+                            ammoInClip = ammoInClip,           -- Balas EN el cargador
+                            maxClipAmmo = maxClipAmmo,         -- Capacidad del cargador
+                            totalAmmo = ammoInInventory,       -- Balas EN el inventario
                             isMelee = isMelee
                         }
                     })
@@ -307,6 +318,74 @@ Citizen.CreateThread(function()
         end
     end
 end)
+
+-- Función para obtener el nombre del item de munición
+function GetAmmoItemName(weaponHash)
+    local ammoTypes = {
+        -- PISTOLAS
+        [`WEAPON_PISTOL`] = "ammo-9",
+        [`WEAPON_PISTOL_MK2`] = "ammo-9",
+        [`WEAPON_COMBATPISTOL`] = "ammo-9",
+        [`WEAPON_APPISTOL`] = "ammo-9",
+        [`WEAPON_SNSPISTOL`] = "ammo-9",
+        [`WEAPON_SNSPISTOL_MK2`] = "ammo-9",
+        [`WEAPON_HEAVYPISTOL`] = "ammo-45",
+        [`WEAPON_VINTAGEPISTOL`] = "ammo-9",
+        [`WEAPON_MARKSMANPISTOL`] = "ammo-22",
+        [`WEAPON_PISTOL50`] = "ammo-50",
+        [`WEAPON_REVOLVER`] = "ammo-44",
+        [`WEAPON_REVOLVER_MK2`] = "ammo-44",
+        [`WEAPON_DOUBLEACTION`] = "ammo-44",
+        
+        -- SMGs
+        [`WEAPON_MICROSMG`] = "ammo-9",
+        [`WEAPON_SMG`] = "ammo-9",
+        [`WEAPON_SMG_MK2`] = "ammo-9",
+        [`WEAPON_ASSAULTSMG`] = "ammo-9",
+        [`WEAPON_COMBATPDW`] = "ammo-9",
+        [`WEAPON_MACHINEPISTOL`] = "ammo-9",
+        [`WEAPON_MINISMG`] = "ammo-9",
+        
+        -- SHOTGUNS
+        [`WEAPON_PUMPSHOTGUN`] = "ammo-shotgun",
+        [`WEAPON_PUMPSHOTGUN_MK2`] = "ammo-shotgun",
+        [`WEAPON_SAWNOFFSHOTGUN`] = "ammo-shotgun",
+        [`WEAPON_ASSAULTSHOTGUN`] = "ammo-shotgun",
+        [`WEAPON_BULLPUPSHOTGUN`] = "ammo-shotgun",
+        [`WEAPON_MUSKET`] = "ammo-musket",
+        [`WEAPON_HEAVYSHOTGUN`] = "ammo-shotgun",
+        [`WEAPON_DBSHOTGUN`] = "ammo-shotgun",
+        [`WEAPON_AUTOSHOTGUN`] = "ammo-shotgun",
+        
+        -- RIFLES
+        [`WEAPON_ASSAULTRIFLE`] = "ammo-rifle",
+        [`WEAPON_ASSAULTRIFLE_MK2`] = "ammo-rifle",
+        [`WEAPON_CARBINERIFLE`] = "ammo-rifle",
+        [`WEAPON_CARBINERIFLE_MK2`] = "ammo-rifle",
+        [`WEAPON_ADVANCEDRIFLE`] = "ammo-rifle",
+        [`WEAPON_SPECIALCARBINE`] = "ammo-rifle",
+        [`WEAPON_SPECIALCARBINE_MK2`] = "ammo-rifle",
+        [`WEAPON_BULLPUPRIFLE`] = "ammo-rifle",
+        [`WEAPON_BULLPUPRIFLE_MK2`] = "ammo-rifle",
+        [`WEAPON_COMPACTRIFLE`] = "ammo-rifle",
+        [`WEAPON_TACTICALRIFLE`] = "ammo-rifle",
+        
+        -- MGs
+        [`WEAPON_MG`] = "ammo-rifle",
+        [`WEAPON_COMBATMG`] = "ammo-rifle",
+        [`WEAPON_COMBATMG_MK2`] = "ammo-rifle",
+        [`WEAPON_GUSENBERG`] = "ammo-45",
+        
+        -- SNIPERS
+        [`WEAPON_SNIPERRIFLE`] = "ammo-sniper",
+        [`WEAPON_HEAVYSNIPER`] = "ammo-sniper",
+        [`WEAPON_HEAVYSNIPER_MK2`] = "ammo-sniper",
+        [`WEAPON_MARKSMANRIFLE`] = "ammo-sniper",
+        [`WEAPON_MARKSMANRIFLE_MK2`] = "ammo-sniper",
+    }
+    
+    return ammoTypes[weaponHash]
+end
 
 -- Función auxiliar para obtener el nombre del item del arma
 function GetWeaponItemName(weaponHash)
@@ -391,6 +470,8 @@ function GetWeaponItemName(weaponHash)
         [`WEAPON_POOLCUE`] = "weapon_poolcue",
         [`WEAPON_WRENCH`] = "weapon_wrench",
         [`WEAPON_BATTLEAXE`] = "weapon_battleaxe",
+        [`WEAPON_TACTICALRIFLE`] = "weapon_tacticalrifle",
+         -- Agregar más armas aquí si es necesario
     }
     
     return weapons[weaponHash] or "weapon_pistol"
@@ -479,6 +560,8 @@ function GetWeaponLabel(weaponHash)
         [`WEAPON_POOLCUE`] = "POOL CUE",
         [`WEAPON_WRENCH`] = "WRENCH",
         [`WEAPON_BATTLEAXE`] = "BATTLE AXE",
+        [`WEAPON_TACTICALRIFLE`] = "TACTICAL RIFLE",
+         -- Agregar más armas aquí si es necesario
     }
     
     return weaponLabels[weaponHash] or "WEAPON"

@@ -80,14 +80,14 @@ body {
     border-radius: 20px;
 }
 
-/* Cambio de color cuando crÃ­tico - Aplicar tinte rojo */
+/* Cambio de color cuando crÃƒÂ­tico - Aplicar tinte rojo */
 .stat-item.critical .icon-fill-img {
     filter: brightness(0) saturate(100%) 
             invert(27%) sepia(98%) saturate(7495%) 
             hue-rotate(8deg) brightness(98%) contrast(118%);
 }
 
-/* Health, thirst, hunger mantienen su color base pero mÃ¡s intenso */
+/* Health, thirst, hunger mantienen su color base pero mÃƒÂ¡s intenso */
 #health-stat.critical .icon-fill-img {
     filter: brightness(1.3) saturate(2) drop-shadow(0 0 8px rgba(244, 67, 54, 0.8));
 }
@@ -114,7 +114,7 @@ body {
             drop-shadow(0 0 8px rgba(244, 67, 54, 0.8));
 }
 
-/* Parpadeo del contorno tambiÃ©n en rojo cuando crÃ­tico */
+/* Parpadeo del contorno tambiÃƒÂ©n en rojo cuando crÃƒÂ­tico */
 .stat-item.critical .icon-outline {
     animation: pulseOutlineCritical 0.8s infinite;
     filter: drop-shadow(0 0 6px rgba(244, 67, 54, 0.6));
@@ -166,7 +166,7 @@ body {
     text-shadow: none;
 }
 
-/* Cuando estÃ¡ hablando - se ilumina */
+/* Cuando estÃƒÂ¡ hablando - se ilumina */
 .stat-voice.talking .voice-text {
     color: rgb(255, 255, 255);
     text-shadow: 0 0 15px rgba(255, 255, 255, 0.8),
@@ -194,7 +194,7 @@ body {
     opacity: 1;
 }
 
-/* ========== HUD DE VEHÃCULO ========== */
+/* ========== HUD DE VEHÃƒÂCULO ========== */
 #vehicle-hud {
     position: fixed;
     bottom: 50px;
@@ -217,7 +217,7 @@ body {
     pointer-events: none;
 }
 
-/* Contenedor de velocÃ­metro e iconos */
+/* Contenedor de velocÃƒÂ­metro e iconos */
 .speed-and-icons {
     display: flex;
     align-items: center;
@@ -225,7 +225,7 @@ body {
     gap: 15px;
 }
 
-/* VELOCÃMETRO */
+/* VELOCÃƒÂMETRO */
 .speedometer {
     display: flex;
     align-items: baseline;
@@ -257,7 +257,7 @@ body {
     margin-bottom: 5px;
 }
 
-/* ICONOS DE ESTADO (al lado del velocÃ­metro) */
+/* ICONOS DE ESTADO (al lado del velocÃƒÂ­metro) */
 .vehicle-icons {
     display: flex;
     gap: 8px;
@@ -314,7 +314,7 @@ body {
     position: relative;
 }
 
-/* Contenedor especial para barra de motor mÃ¡s gorda */
+/* Contenedor especial para barra de motor mÃƒÂ¡s gorda */
 .engine-bar-container {
     height: 15px !important;
 }
@@ -490,7 +490,7 @@ body {
     box-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
 }
 
-/* AnimaciÃ³n de pulso cuando estÃ¡ baja */
+/* AnimaciÃƒÂ³n de pulso cuando estÃƒÂ¡ baja */
 .stamina-bar-fill[data-low="true"] {
     animation: pulseStamina 1s infinite;
 }
@@ -560,7 +560,7 @@ body {
     line-height: 1;
 }
 
-/* AnimaciÃ³n de entrada */
+/* AnimaciÃƒÂ³n de entrada */
 #location-display {
     animation: slideInLocation 0.5s ease;
 }
@@ -579,17 +579,16 @@ body {
 /* ========== WEAPON HUD ========== */
 #weapon-hud {
     position: fixed;
-    bottom: 95px;
+    bottom: 130px;
     right: 30px;
     display: flex;
     align-items: center;
-    gap: 15px;
+    gap: 20px;
     padding: 12px 18px;
     background: rgba(30, 30, 30, 0.9);
     border-radius: 8px;
-    border: 2px solid rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-    min-width: 220px;
+    min-width: 340px;
+    min-height: 90px;
     opacity: 1;
     transform: translateX(0);
     transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
@@ -603,7 +602,7 @@ body {
     pointer-events: none;
 }
 
-/* AnimaciÃ³n de entrada */
+/* AnimaciÃƒÂ³n de entrada */
 #weapon-hud:not(.hidden) {
     animation: slideInWeapon 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -632,8 +631,8 @@ body {
 }
 
 #weapon-icon {
-    max-width: 90%;
-    max-height: 90%;
+    max-width: 140%;
+    max-height: 140%;
     object-fit: contain;
     filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.5));
 }
@@ -693,7 +692,7 @@ body {
 
 .weapon-ammo-bar {
     width: 100%;
-    height: 6px;
+    height: 7px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 3px;
     overflow: hidden;
@@ -709,7 +708,7 @@ body {
     box-shadow: 0 0 8px rgba(255, 255, 255, 0.4);
 }
 
-/* AnimaciÃ³n cuando la municiÃ³n estÃ¡ baja */
+/* AnimaciÃƒÂ³n cuando la municiÃƒÂ³n estÃƒÂ¡ baja */
 .weapon-ammo-bar-fill.low {
     background: linear-gradient(90deg, #EF5350 0%, #D32F2F 100%);
     animation: pulseAmmo 1s infinite;
@@ -726,7 +725,7 @@ body {
     }
 }
 
-/* Texto de municiÃ³n baja en rojo */
+/* Texto de municiÃƒÂ³n baja en rojo */
 .weapon-ammo-current.low {
     color: #EF5350;
     animation: pulseAmmoText 1s infinite;

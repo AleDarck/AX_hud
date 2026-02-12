@@ -439,20 +439,24 @@ function updateWeaponHUD(data) {
     
     // Actualizar icono del arma
     if (weaponIcon && data.weaponItem) {
+        // Resetear el error handler antes de cambiar src
+        weaponIcon.onerror = null;
+        
         // Intentar primero con minúsculas
         let imagePath = `nui://ox_inventory/web/images/${data.weaponItem}.png`;
-        weaponIcon.src = imagePath;
         
-        // Si falla, intentar con mayúsculas
         weaponIcon.onerror = function() {
+            // Si falla minúsculas, intentar mayúsculas
             const upperItem = data.weaponItem.toUpperCase();
-            weaponIcon.src = `nui://ox_inventory/web/images/${upperItem}.png`;
-            
-            // Si también falla, usar imagen por defecto
             weaponIcon.onerror = function() {
+                // Si también falla mayúsculas, usar imagen por defecto
+                weaponIcon.onerror = null; // Evitar loop infinito
                 weaponIcon.src = 'icons/weapon_default.png';
             };
+            weaponIcon.src = `nui://ox_inventory/web/images/${upperItem}.png`;
         };
+        
+        weaponIcon.src = imagePath;
     }
     
     // Actualizar nombre
