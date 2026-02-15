@@ -27,17 +27,73 @@ local statusData = {
 -- Variables de voz
 local currentVoiceMode = 2
 local isTalking = false
-local isRadioTalking = false  -- NUEVO
+local isRadioTalking = false
+local lastVoiceMode = 2  -- NUEVO: Guardar modo anterior a radio
 
 -- Escuchar cuando habla por radio (pma-voice)
 AddEventHandler('pma-voice:radioActive', function(talking)
-    isRadioTalking = talking
+    if talking then
+        -- Guardar modo actual antes de activar radio
+        lastVoiceMode = currentVoiceMode
+        isRadioTalking = true
+    else
+        -- Restaurar modo anterior al dejar de hablar
+        isRadioTalking = false
+    end
+    
     SendNUIMessage({
         action = "updateVoice",
-        voice = currentVoiceMode,
+        voice = isRadioTalking and -1 or currentVoiceMode,  -- -1 indica modo RADIO
         isTalking = isTalking,
-        isRadio = isRadioTalking  -- NUEVO
+        isRadio = isRadioTalking
     })
+end)
+
+-- Evento alternativo para pma-voice (algunas versiones usan este)
+AddEventHandler('pma-voice:radioTalking', function(talking)
+    if talking then
+        lastVoiceMode = currentVoiceMode
+        isRadioTalking = true
+    else
+        isRadioTalking = false
+    end
+    
+    SendNUIMessage({
+        action = "updateVoice",
+        voice = isRadioTalking and -1 or currentVoiceMode,
+        isTalking = isTalking,
+        isRadio = isRadioTalking
+    })
+end)
+
+-- Thread para detectar radio de pma-voice
+Citizen.CreateThread(function()
+    while true do
+        Citizen.Wait(200)
+        
+        if not statusData.isDead then
+            -- Intentar obtener estado de radio directamente
+            local success, radioState = pcall(function()
+                return exports['pma-voice']:getRadioTalkingState()
+            end)
+            
+            local newRadioState = false
+            if success and radioState then
+                newRadioState = radioState
+            end
+            
+            if newRadioState ~= isRadioTalking then
+                isRadioTalking = newRadioState
+                
+                SendNUIMessage({
+                    action = "updateVoice",
+                    voice = isRadioTalking and -1 or currentVoiceMode,
+                    isTalking = isTalking or isRadioTalking,
+                    isRadio = isRadioTalking
+                })
+            end
+        end
+    end
 end)
 
 -- Variables de vehículo
@@ -46,6 +102,37 @@ local seatbeltOn = false
 
 -- Variable para estado del HUD
 local hudEnabled = true
+
+-- Función para actualizar posición del minimapa
+function UpdateMinimapPosition(inVehicle)
+    -- Ocultar minimapa primero
+    DisplayRadar(false)
+    
+    Wait(50)
+    
+    if inVehicle then
+        -- Posición en vehículo - APLICAR TODOS A LA VEZ
+        SetMinimapComponentPosition("minimap", "L", "B", 0.045, -0.156, 0.141, 0.171)
+        SetMinimapComponentPosition("minimap_mask", "L", "B", 0.021, -0.121, 0.115, 0.158)
+        SetMinimapComponentPosition("minimap_blur", "L", "B", 0.014, -0.126, 0.266, 0.227)
+    else
+        -- Posición a pie - APLICAR TODOS A LA VEZ
+        SetMinimapComponentPosition("minimap", "L", "B", 0.039, -0.140, 0.140, 0.170)
+        SetMinimapComponentPosition("minimap_mask", "L", "B", 0.015, -0.105, 0.115, 0.158)
+        SetMinimapComponentPosition("minimap_blur", "L", "B", 0.008, -0.110, 0.266, 0.227)
+    end
+    
+    Wait(50)
+    
+    -- Volver a mostrar
+    DisplayRadar(true)
+    
+    -- Segundo refresh (esto simula abrir/cerrar el mapa)
+    Wait(100)
+    SetRadarBigmapEnabled(true, false)
+    Wait(50)
+    SetRadarBigmapEnabled(false, false)
+end
 
 -- Inicialización
 Citizen.CreateThread(function()
@@ -63,6 +150,22 @@ Citizen.CreateThread(function()
             url = Config.LogoURL
         })
     end
+    
+    -- Forzar refresh del minimapa al cargar
+    Wait(2000)
+    local playerPed = PlayerPedId()
+    local vehicle = GetVehiclePedIsIn(playerPed, false)
+    
+    if vehicle ~= 0 and GetPedInVehicleSeat(vehicle, -1) == playerPed then
+        UpdateMinimapPosition(true)
+    else
+        UpdateMinimapPosition(false)
+    end
+    
+    -- Doble toggle para forzar refresh visual
+    DisplayRadar(false)
+    Wait(100)
+    DisplayRadar(true)
 end)
 
 RegisterNetEvent('esx:playerLoaded')
@@ -84,6 +187,32 @@ end)
 RegisterNetEvent('esx:onPlayerSpawn')
 AddEventHandler('esx:onPlayerSpawn', function()
     statusData.isDead = false
+    
+    -- Verificar GPS al revivir
+    Wait(500) -- Esperar a que cargue el inventario
+    
+    if Config.RequireGPS then
+        local itemCount = exports.ox_inventory:Search('count', Config.GPSItem)
+        local shouldShowRadar = (itemCount and itemCount > 0)
+        
+        minimapEnabled = shouldShowRadar
+        DisplayRadar(shouldShowRadar)
+        
+        -- Solo actualizar posición si tiene GPS
+        if shouldShowRadar then
+            Wait(200)
+            UpdateMinimapPosition(inVehicle)
+            DisplayRadar(false)
+            Wait(100)
+            DisplayRadar(true)
+        end
+    else
+        -- Si no requiere GPS, mostrar siempre
+        minimapEnabled = true
+        DisplayRadar(true)
+        Wait(200)
+        UpdateMinimapPosition(inVehicle)
+    end
 end)
 
 -- Escuchar cambios de modo de voz (pma-voice)
@@ -194,15 +323,16 @@ Citizen.CreateThread(function()
         
         if not statusData.isDead then
             local wasTalking = isTalking
+            local wasRadioTalking = isRadioTalking
             isTalking = NetworkIsPlayerTalking(PlayerId())
             
-            -- Solo actualizar si cambió el estado de hablar O si está en radio
-            if wasTalking ~= isTalking or isRadioTalking then
+            -- Actualizar si cambió hablar normal O radio
+            if wasTalking ~= isTalking or wasRadioTalking ~= isRadioTalking then
                 SendNUIMessage({
                     action = "updateVoice",
-                    voice = currentVoiceMode,
-                    isTalking = isTalking,
-                    isRadio = isRadioTalking  -- NUEVO
+                    voice = isRadioTalking and -1 or currentVoiceMode,
+                    isTalking = isTalking or isRadioTalking,  -- Talking si habla normal O radio
+                    isRadio = isRadioTalking
                 })
             end
         end
@@ -609,6 +739,15 @@ Citizen.CreateThread(function()
             if not inVehicle then
                 inVehicle = true
                 SendNUIMessage({action = "showVehicleHUD", state = true})
+                
+                -- Actualizar posición del minimapa a vehículo con refresh
+                if minimapEnabled then
+                    DisplayRadar(false)
+                    Wait(100)
+                    UpdateMinimapPosition(true)
+                    Wait(100)
+                    DisplayRadar(true)
+                end
             end
             sleep = 100
         else
@@ -616,6 +755,15 @@ Citizen.CreateThread(function()
                 inVehicle = false
                 seatbeltOn = false
                 SendNUIMessage({action = "showVehicleHUD", state = false})
+                
+                -- Actualizar posición del minimapa a pie con refresh
+                if minimapEnabled then
+                    DisplayRadar(false)
+                    Wait(100)
+                    UpdateMinimapPosition(false)
+                    Wait(100)
+                    DisplayRadar(true)
+                end
             end
         end
         
@@ -789,6 +937,12 @@ Citizen.CreateThread(function()
                 minimapEnabled = shouldShowRadar
                 DisplayRadar(minimapEnabled)
                 
+                -- NUEVO: Mostrar/ocultar marco
+                SendNUIMessage({
+                    action = "toggleMinimapFrame",
+                    state = minimapEnabled
+                })
+
                 -- Actualizar posición según si está en vehículo
                 if minimapEnabled then
                 end
@@ -797,6 +951,7 @@ Citizen.CreateThread(function()
             -- Si tiene GPS y cambió el estado del vehículo, actualizar posición
             if minimapEnabled and lastVehicleState ~= inVehicle then
                 lastVehicleState = inVehicle
+                UpdateMinimapPosition(inVehicle)
             end
         else
             -- Si no requiere GPS, mostrar siempre
@@ -808,6 +963,7 @@ Citizen.CreateThread(function()
             -- Actualizar posición según vehículo
             if lastVehicleState ~= inVehicle then
                 lastVehicleState = inVehicle
+                UpdateMinimapPosition(inVehicle)
             end
         end
     end
@@ -861,3 +1017,18 @@ exports('IsHUDEnabled', function()
     return hudEnabled
 end)
 
+RegisterCommand('test_radio', function()
+    isRadioTalking = not isRadioTalking
+    
+    print('^3[DEBUG RADIO]^7 isRadioTalking:', isRadioTalking)
+    print('^3[DEBUG RADIO]^7 currentVoiceMode:', currentVoiceMode)
+    
+    SendNUIMessage({
+        action = "updateVoice",
+        voice = isRadioTalking and -1 or currentVoiceMode,
+        isTalking = true,
+        isRadio = isRadioTalking
+    })
+    
+    ESX.ShowNotification('Radio toggled: ' .. tostring(isRadioTalking), 'info')
+end)

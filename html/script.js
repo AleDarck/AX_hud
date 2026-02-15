@@ -324,6 +324,10 @@ window.addEventListener('message', (event) => {
             setColors(data.colors);
             break;
 
+        case 'toggleMinimapFrame':
+            toggleMinimapFrame(data.state);
+            break;
+
         case 'setLogo':
             const logoImg = document.getElementById('logo-img');
             if (logoImg && data.url) {
@@ -442,6 +446,17 @@ function updateStats(data) {
     updateStatFill(temperatureStat, (data.temperature / 40) * 100, 'temperature');
 }
 
+function toggleMinimapFrame(state) {
+    const frame = document.getElementById('minimap-frame');
+    if (!frame) return;
+    
+    if (state) {
+        frame.classList.remove('hidden');
+    } else {
+        frame.classList.add('hidden');
+    }
+}
+
 function updateStaminaBar(stamina, inVehicle) {
     if (!staminaBarFill || !staminaBarContainer) return;
     
@@ -474,6 +489,24 @@ function updateLocation(zone, street, inVehicle) {
         locationDisplay.classList.add('hidden');
     } else {
         locationDisplay.classList.remove('hidden');
+    }
+    
+    // NUEVO: Mover marco del minimapa
+    updateMinimapFrame(inVehicle);
+}
+
+function updateMinimapFrame(inVehicle) {
+    const frame = document.getElementById('minimap-frame');
+    if (!frame) return;
+    
+    if (inVehicle) {
+        // Posición en vehículo (ajusta según tus coordenadas)
+        frame.style.bottom = '175px';
+        frame.style.left = '86px';
+    } else {
+        // Posición a pie
+        frame.style.bottom = '155px';
+        frame.style.left = '74px';
     }
 }
 
