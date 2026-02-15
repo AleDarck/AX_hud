@@ -62,6 +62,18 @@ Config.WeaponHUD = {
     inventoryPath = "nui://ox_inventory/web/images/"
 }
 
+-- Configuración de Minimapa
+Config.UseMapCustomZoomLevels = false -- true si quieres custom zoom levels
+
+-- Zoom levels personalizados (opcional)
+Config.MapZoomLevels = {
+    {0, 0.96, 0.9, 0.08, 0.0, 0.0}, -- Level 0
+    {1, 1.6, 0.9, 0.08, 0.0, 0.0},  -- Level 1
+    {2, 8.6, 0.9, 0.08, 0.0, 0.0},  -- Level 2
+    {3, 12.3, 0.9, 0.08, 0.0, 0.0}, -- Level 3
+    {4, 22.3, 0.9, 0.08, 0.0, 0.0}  -- Level 4
+}
+
 --[[
 
 local health = exports['AX_hud']:GetHealth()

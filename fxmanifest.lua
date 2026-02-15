@@ -26,7 +26,12 @@ files {
     'html/index.html',
     'html/style.css',
     'html/script.js',
-    'html/icons/*.png'  -- NUEVO
+    'html/icons/*.png',
+    'stream/circlemap.ytd',
+    'stream/minimap.gfx',
+    'stream/minimap.ytd',
+    'stream/*.ydd',
+    'stream/*.ytd'
 }
 
 dependency 'es_extended'

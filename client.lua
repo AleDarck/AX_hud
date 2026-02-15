@@ -27,6 +27,18 @@ local statusData = {
 -- Variables de voz
 local currentVoiceMode = 2
 local isTalking = false
+local isRadioTalking = false  -- NUEVO
+
+-- Escuchar cuando habla por radio (pma-voice)
+AddEventHandler('pma-voice:radioActive', function(talking)
+    isRadioTalking = talking
+    SendNUIMessage({
+        action = "updateVoice",
+        voice = currentVoiceMode,
+        isTalking = isTalking,
+        isRadio = isRadioTalking  -- NUEVO
+    })
+end)
 
 -- Variables de vehículo
 local inVehicle = false
@@ -184,12 +196,13 @@ Citizen.CreateThread(function()
             local wasTalking = isTalking
             isTalking = NetworkIsPlayerTalking(PlayerId())
             
-            -- Solo actualizar si cambió el estado de hablar
-            if wasTalking ~= isTalking then
+            -- Solo actualizar si cambió el estado de hablar O si está en radio
+            if wasTalking ~= isTalking or isRadioTalking then
                 SendNUIMessage({
                     action = "updateVoice",
                     voice = currentVoiceMode,
-                    isTalking = isTalking
+                    isTalking = isTalking,
+                    isRadio = isRadioTalking  -- NUEVO
                 })
             end
         end
@@ -743,21 +756,10 @@ RegisterCommand('togglehud', function()
     })
     
     if hudEnabled then
-        ESX.ShowNotification('HUD ~g~activado')
+        ESX.ShowNotification('HUD activado')
     else
-        ESX.ShowNotification('HUD ~r~desactivado')
+        ESX.ShowNotification('HUD desactivado')
     end
-end, false)
-
--- Comando para recargar posición del minimapa
-RegisterCommand('reloadmap', function()
-    -- Forzar recargar la posición del minimapa
-    SetMinimapComponentPosition('minimap', 'L', 'B', 0.015, 0.025, 0.150, 0.188)
-    SetMinimapComponentPosition('minimap_mask', 'L', 'B', 0.035, 0.055, 0.111, 0.159)
-    SetMinimapComponentPosition('minimap_blur', 'L', 'B', -0.01, 0.021, 0.266, 0.237)
-    SetRadarZoom(1100)
-    
-    ESX.ShowNotification('Minimapa recargado')
 end, false)
 
 -- Ocultar HUD nativo (optimizado)
@@ -772,7 +774,7 @@ Citizen.CreateThread(function()
     end
 end)
 
--- Sistema de GPS (requiere item)
+-- Sistema de GPS (requiere item) con posiciones diferentes
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(2000)
@@ -780,46 +782,39 @@ Citizen.CreateThread(function()
         if Config.RequireGPS then
             -- Verificar si tiene el item GPS
             local itemCount = exports.ox_inventory:Search('count', Config.GPSItem)
-            hasGPS = (itemCount and itemCount > 0)
+            local shouldShowRadar = (itemCount and itemCount > 0)
             
-            -- Mostrar minimapa si tiene GPS (sin importar si está en vehículo)
-            if hasGPS ~= minimapEnabled then
-                minimapEnabled = hasGPS
+            -- Mostrar minimapa solo si tiene GPS
+            if shouldShowRadar ~= minimapEnabled then
+                minimapEnabled = shouldShowRadar
                 DisplayRadar(minimapEnabled)
+                
+                -- Actualizar posición según si está en vehículo
+                if minimapEnabled then
+                end
+            end
+            
+            -- Si tiene GPS y cambió el estado del vehículo, actualizar posición
+            if minimapEnabled and lastVehicleState ~= inVehicle then
+                lastVehicleState = inVehicle
             end
         else
-            -- Si no requiere GPS, mostrar siempre en vehículo
-            if inVehicle ~= minimapEnabled then
-                minimapEnabled = inVehicle
-                DisplayRadar(minimapEnabled)
+            -- Si no requiere GPS, mostrar siempre
+            if not minimapEnabled then
+                minimapEnabled = true
+                DisplayRadar(true)
+            end
+            
+            -- Actualizar posición según vehículo
+            if lastVehicleState ~= inVehicle then
+                lastVehicleState = inVehicle
             end
         end
     end
 end)
 
--- Ocultar minimapa al inicio
-Citizen.CreateThread(function()
-    Wait(500)
-    if Config.RequireGPS then
-        DisplayRadar(false)
-    end
-end)
-
--- Personalizar minimapa
-Citizen.CreateThread(function()
-    while not HasStreamedTextureDictLoaded("circlemap") do
-        Wait(100)
-    end
-    
-    -- Ajustamos X (de -0.0045 a 0.015) para mover a la derecha
-    -- Ajustamos Y (de 0.002 a 0.025) para subirlo
-    SetMinimapComponentPosition('minimap', 'L', 'B', 0.015, 0.025, 0.150, 0.188)
-    SetMinimapComponentPosition('minimap_mask', 'L', 'B', 0.035, 0.055, 0.111, 0.159)
-    SetMinimapComponentPosition('minimap_blur', 'L', 'B', -0.01, 0.021, 0.266, 0.237)
-    
-    SetRadarBigmapEnabled(false, false)
-    SetRadarZoom(1100)
-end)
+-- Variable para trackear último estado de vehículo
+local lastVehicleState = false
 
 -- EXPORTS
 exports('GetHealth', function()

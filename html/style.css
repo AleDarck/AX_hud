@@ -235,6 +235,17 @@ body {
                  0 0 30px rgba(255, 255, 255, 0.5);
 }
 
+/* Modo RADIO */
+.stat-voice.radio .voice-text {
+    color: rgb(33, 150, 243); /* Azul para radio */
+}
+
+.stat-voice.radio.talking .voice-text {
+    color: rgb(33, 150, 243);
+    text-shadow: 0 0 15px rgba(33, 150, 243, 0.8),
+                 0 0 30px rgba(33, 150, 243, 0.5);
+}
+
 /* LOGO DEL SERVIDOR */
 #server-logo {
     position: fixed;

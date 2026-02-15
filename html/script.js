@@ -165,11 +165,19 @@ function animateValue(element, start, end) {
 }
 
 // Actualizar indicador de voz
-function updateVoiceIndicator(mode, isTalking) {
+function updateVoiceIndicator(mode, isTalking, isRadio) {
     const voiceText = document.getElementById('voice-text');
     const voiceStat = document.getElementById('voice-stat');
     
     if (!voiceText || !voiceStat) return;
+    
+    // Si está hablando por radio, override todo
+    if (isRadio) {
+        voiceText.textContent = 'RADIO';
+        voiceStat.classList.remove('whisper', 'normal', 'shout', 'talking');
+        voiceStat.classList.add('radio', 'talking');
+        return;
+    }
     
     // Mapeo de modos (debe coincidir con Config.VoiceLabels en Lua)
     const modeLabels = {
@@ -188,7 +196,7 @@ function updateVoiceIndicator(mode, isTalking) {
     voiceText.textContent = modeLabels[mode] || 'NORMAL';
     
     // Remover clases previas
-    voiceStat.classList.remove('whisper', 'normal', 'shout', 'talking');
+    voiceStat.classList.remove('whisper', 'normal', 'shout', 'radio', 'talking');
     
     // Agregar clase de modo
     voiceStat.classList.add(modeClasses[mode] || 'normal');
@@ -294,6 +302,10 @@ window.addEventListener('message', (event) => {
             
         case 'updateVoice':
             updateVoiceIndicator(data.voice, data.isTalking);
+            break;
+
+        case 'updateVoice':
+            updateVoiceIndicator(data.voice, data.isTalking, data.isRadio);
             break;
 
         case 'toggleHUD':
