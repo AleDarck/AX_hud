@@ -66,29 +66,37 @@ AddEventHandler('pma-voice:radioTalking', function(talking)
     })
 end)
 
--- Thread para detectar radio de pma-voice
+-- Thread para detectar radio de pma-voice (MÉTODO CORRECTO)
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(200)
+        Citizen.Wait(100)
         
         if not statusData.isDead then
-            -- Intentar obtener estado de radio directamente
-            local success, radioState = pcall(function()
-                return exports['pma-voice']:getRadioTalkingState()
+            -- Usar el export correcto
+            local success, radioTalking = pcall(function()
+                local Player = LocalPlayer.state
+                return Player.radioActive or false
             end)
             
-            local newRadioState = false
-            if success and radioState then
-                newRadioState = radioState
+            if not success then
+                -- Método alternativo: verificar si el canal de radio está activo
+                success, radioTalking = pcall(function()
+                    return LocalPlayer.state.radioChannel ~= nil and LocalPlayer.state.radioChannel > 0
+                end)
             end
             
+            local newRadioState = success and radioTalking or false
+            
+            -- Detectar cambio de estado
             if newRadioState ~= isRadioTalking then
                 isRadioTalking = newRadioState
+                
+                print('^3[RADIO CAMBIO]^7 Estado:', isRadioTalking)
                 
                 SendNUIMessage({
                     action = "updateVoice",
                     voice = isRadioTalking and -1 or currentVoiceMode,
-                    isTalking = isTalking or isRadioTalking,
+                    isTalking = isRadioTalking,
                     isRadio = isRadioTalking
                 })
             end
@@ -323,15 +331,14 @@ Citizen.CreateThread(function()
         
         if not statusData.isDead then
             local wasTalking = isTalking
-            local wasRadioTalking = isRadioTalking
             isTalking = NetworkIsPlayerTalking(PlayerId())
             
-            -- Actualizar si cambió hablar normal O radio
-            if wasTalking ~= isTalking or wasRadioTalking ~= isRadioTalking then
+            -- SIEMPRE enviar update si cambió algo O si está en radio
+            if wasTalking ~= isTalking or isRadioTalking then
                 SendNUIMessage({
                     action = "updateVoice",
                     voice = isRadioTalking and -1 or currentVoiceMode,
-                    isTalking = isTalking or isRadioTalking,  -- Talking si habla normal O radio
+                    isTalking = isTalking or isRadioTalking,
                     isRadio = isRadioTalking
                 })
             end
@@ -1015,20 +1022,4 @@ end)
 
 exports('IsHUDEnabled', function()
     return hudEnabled
-end)
-
-RegisterCommand('test_radio', function()
-    isRadioTalking = not isRadioTalking
-    
-    print('^3[DEBUG RADIO]^7 isRadioTalking:', isRadioTalking)
-    print('^3[DEBUG RADIO]^7 currentVoiceMode:', currentVoiceMode)
-    
-    SendNUIMessage({
-        action = "updateVoice",
-        voice = isRadioTalking and -1 or currentVoiceMode,
-        isTalking = true,
-        isRadio = isRadioTalking
-    })
-    
-    ESX.ShowNotification('Radio toggled: ' .. tostring(isRadioTalking), 'info')
 end)

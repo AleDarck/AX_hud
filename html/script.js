@@ -172,10 +172,14 @@ function updateVoiceIndicator(mode, isTalking, isRadio) {
     if (!voiceText || !voiceStat) return;
     
     // Si está hablando por radio, override todo
-    if (isRadio) {
+    if (isRadio || mode === -1) {
         voiceText.textContent = 'RADIO';
         voiceStat.classList.remove('whisper', 'normal', 'shout', 'talking');
-        voiceStat.classList.add('radio', 'talking');
+        voiceStat.classList.add('radio');
+        
+        if (isTalking) {
+            voiceStat.classList.add('talking');
+        }
         return;
     }
     
