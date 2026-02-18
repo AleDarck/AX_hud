@@ -28,81 +28,7 @@ local statusData = {
 local currentVoiceMode = 2
 local isTalking = false
 local isRadioTalking = false
-local lastVoiceMode = 2  -- NUEVO: Guardar modo anterior a radio
-
--- Escuchar cuando habla por radio (pma-voice)
-AddEventHandler('pma-voice:radioActive', function(talking)
-    if talking then
-        -- Guardar modo actual antes de activar radio
-        lastVoiceMode = currentVoiceMode
-        isRadioTalking = true
-    else
-        -- Restaurar modo anterior al dejar de hablar
-        isRadioTalking = false
-    end
-    
-    SendNUIMessage({
-        action = "updateVoice",
-        voice = isRadioTalking and -1 or currentVoiceMode,  -- -1 indica modo RADIO
-        isTalking = isTalking,
-        isRadio = isRadioTalking
-    })
-end)
-
--- Evento alternativo para pma-voice (algunas versiones usan este)
-AddEventHandler('pma-voice:radioTalking', function(talking)
-    if talking then
-        lastVoiceMode = currentVoiceMode
-        isRadioTalking = true
-    else
-        isRadioTalking = false
-    end
-    
-    SendNUIMessage({
-        action = "updateVoice",
-        voice = isRadioTalking and -1 or currentVoiceMode,
-        isTalking = isTalking,
-        isRadio = isRadioTalking
-    })
-end)
-
--- Thread para detectar radio de pma-voice (MÉTODO CORRECTO)
-Citizen.CreateThread(function()
-    while true do
-        Citizen.Wait(100)
-        
-        if not statusData.isDead then
-            -- Usar el export correcto
-            local success, radioTalking = pcall(function()
-                local Player = LocalPlayer.state
-                return Player.radioActive or false
-            end)
-            
-            if not success then
-                -- Método alternativo: verificar si el canal de radio está activo
-                success, radioTalking = pcall(function()
-                    return LocalPlayer.state.radioChannel ~= nil and LocalPlayer.state.radioChannel > 0
-                end)
-            end
-            
-            local newRadioState = success and radioTalking or false
-            
-            -- Detectar cambio de estado
-            if newRadioState ~= isRadioTalking then
-                isRadioTalking = newRadioState
-                
-                print('^3[RADIO CAMBIO]^7 Estado:', isRadioTalking)
-                
-                SendNUIMessage({
-                    action = "updateVoice",
-                    voice = isRadioTalking and -1 or currentVoiceMode,
-                    isTalking = isRadioTalking,
-                    isRadio = isRadioTalking
-                })
-            end
-        end
-    end
-end)
+local lastVoiceMode = 2
 
 -- Variables de vehículo
 local inVehicle = false
@@ -158,6 +84,12 @@ Citizen.CreateThread(function()
             url = Config.LogoURL
         })
     end
+    
+    -- NUEVO: Ocultar marco del minimapa al inicio
+    SendNUIMessage({
+        action = "toggleMinimapFrame",
+        state = false
+    })
     
     -- Forzar refresh del minimapa al cargar
     Wait(2000)
@@ -221,16 +153,6 @@ AddEventHandler('esx:onPlayerSpawn', function()
         Wait(200)
         UpdateMinimapPosition(inVehicle)
     end
-end)
-
--- Escuchar cambios de modo de voz (pma-voice)
-AddEventHandler('pma-voice:setTalkingMode', function(mode)
-    currentVoiceMode = mode
-    SendNUIMessage({
-        action = "updateVoice",
-        voice = currentVoiceMode,
-        isTalking = isTalking
-    })
 end)
 
 -- Thread principal optimizado
@@ -324,25 +246,63 @@ Citizen.CreateThread(function()
     end
 end)
 
--- Thread para voz (más rápido solo para voz)
+-- Thread para voz
 Citizen.CreateThread(function()
     while true do
         Citizen.Wait(150)
         
-        if not statusData.isDead then
+        if not statusData.isDead and not isRadioTalking then  -- AÑADIR: and not isRadioTalking
             local wasTalking = isTalking
             isTalking = NetworkIsPlayerTalking(PlayerId())
             
-            -- SIEMPRE enviar update si cambió algo O si está en radio
-            if wasTalking ~= isTalking or isRadioTalking then
+            if wasTalking ~= isTalking then
                 SendNUIMessage({
                     action = "updateVoice",
-                    voice = isRadioTalking and -1 or currentVoiceMode,
-                    isTalking = isTalking or isRadioTalking,
-                    isRadio = isRadioTalking
+                    voice = currentVoiceMode,
+                    isTalking = isTalking,
+                    isRadio = false
                 })
             end
         end
+    end
+end)
+
+-- Escuchar cambios de modo de voz (pma-voice)
+AddEventHandler('pma-voice:setTalkingMode', function(mode)
+    currentVoiceMode = mode
+    SendNUIMessage({
+        action = "updateVoice",
+        voice = currentVoiceMode,
+        isTalking = isTalking,
+        isRadio = false
+    })
+end)
+
+-- Detectar cuando habla por radio
+AddEventHandler('pma-voice:radioActive', function(talking)
+    print('^3[RADIO DEBUG]^7 Estado:', talking)
+    
+    -- Pequeño delay para evitar conflictos
+    Citizen.Wait(50)
+    
+    isRadioTalking = talking
+    
+    if talking then
+        lastVoiceMode = currentVoiceMode
+        
+        SendNUIMessage({
+            action = "updateVoice",
+            voice = -1,
+            isTalking = true,
+            isRadio = true
+        })
+    else
+        SendNUIMessage({
+            action = "updateVoice",
+            voice = lastVoiceMode,
+            isTalking = NetworkIsPlayerTalking(PlayerId()),
+            isRadio = false
+        })
     end
 end)
 
